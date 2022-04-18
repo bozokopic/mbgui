@@ -14,8 +14,8 @@ class Status(enum.Enum):
 
 
 class Directory(typing.NamedTuple):
+    path: typing.Optional[str]
     name: str
-    is_leaf: bool
     children: typing.List['Directory']
 
 
@@ -30,7 +30,7 @@ class Message(typing.NamedTuple):
 
 def get_directories(roots: typing.Iterable[str]) -> typing.List[Directory]:
     paths = _cmd(['mdirs', '-a', *roots])
-    directories = (_get_directory(Path(path).parts) for path in paths)
+    directories = (_get_directory(path, Path(path).parts) for path in paths)
     directories = _group_directories(directories)
     directories = [_reduce_directory(directory) for directory in directories]
     return directories
@@ -73,12 +73,11 @@ def _cmd(args, stdin_lines=[]):
     return stdout.split('\n')
 
 
-def _get_directory(path_parts):
+def _get_directory(path, path_parts):
     name, path_parts = path_parts[0], path_parts[1:]
-    is_leaf = not path_parts
-    children = [_get_directory(path_parts)] if path_parts else []
-    return Directory(name=name,
-                     is_leaf=is_leaf,
+    children = [_get_directory(path, path_parts)] if path_parts else []
+    return Directory(path=(path if not path_parts else None),
+                     name=name,
                      children=children)
 
 
@@ -88,16 +87,16 @@ def _group_directories(directories):
         name_directories.setdefault(i.name, []).append(i)
 
     for name, directories in name_directories.items():
-        is_leaf = any(i.is_leaf for i in directories)
+        path = next((i.path for i in directories if i.path), None)
         children = list(_group_directories(
             itertools.chain.from_iterable(i.children for i in directories)))
-        yield Directory(name=name,
-                        is_leaf=is_leaf,
+        yield Directory(path=path,
+                        name=name,
                         children=children)
 
 
 def _reduce_directory(directory):
-    while not directory.is_leaf and len(directory.children) == 1:
+    while not directory.path and len(directory.children) == 1:
         child = directory.children[0]
         directory = child._replace(name=str(Path(directory.name) / child.name))
 

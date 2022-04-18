@@ -7,12 +7,13 @@ readme = (Path(__file__).parent / 'README.rst').read_text()
 
 setup(
     name='mbgui',
-    version='0.0.1',
+    version='0.1.0',
     description='Maildir GUI based on mblaze',
     long_description=readme,
     long_description_content_type='text/x-rst',
     url='https://github.com/bozokopic/mbgui',
     packages=['mbgui'],
+    install_requires=['PySide6'],
     package_data={'mbgui': ['icons/*.png']},
     license='GPLv3',
     classifiers=[
