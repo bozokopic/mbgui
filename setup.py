@@ -7,7 +7,7 @@ readme = (Path(__file__).parent / 'README.rst').read_text()
 
 setup(
     name='mbgui',
-    version='0.1.2',
+    version='0.1.3',
     description='Maildir GUI based on mblaze',
     long_description=readme,
     long_description_content_type='text/x-rst',

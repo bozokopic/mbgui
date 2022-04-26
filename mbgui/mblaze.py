@@ -1,8 +1,9 @@
 from pathlib import Path
+import enum
+import io
 import itertools
 import subprocess
 import typing
-import enum
 
 
 class Status(enum.Enum):
@@ -38,18 +39,18 @@ def get_directories(roots: typing.Iterable[str]) -> typing.List[Directory]:
 
 def get_directory_total(dir_path: str) -> int:
     paths = _cmd(['mlist', dir_path])
-    return len(paths)
+    return sum(1 for i in paths)
 
 
 def get_directory_unseen(dir_path: str) -> int:
     paths = _cmd(['mlist', '-s', dir_path])
-    return len(paths)
+    return sum(1 for i in paths)
 
 
 def get_messages(dir_path: str) -> typing.List[Message]:
     paths = _cmd(['mlist', dir_path])
     paths = _cmd(['mthread', '-r'], paths)
-    lines = _cmd(['mscan', '-f', r'%i%R\n%u\n%s\n%f\n%D'], paths)
+    lines = _cmd(['mscan', '-f', r'%i\n%R\n%u\n%s\n%f\n%D'], paths)
     messages = _parse_messages(lines)
     return messages
 
@@ -67,10 +68,12 @@ def _cmd(args, stdin_lines=[]):
                        stdout=subprocess.PIPE,
                        encoding='utf-8',
                        check=True)
-    stdout = p.stdout.removesuffix('\n')
-    if not stdout:
-        return []
-    return stdout.split('\n')
+    stdout = io.StringIO(p.stdout)
+    while True:
+        line = stdout.readline()
+        if not line:
+            break
+        yield line[:-1]
 
 
 def _get_directory(path, path_parts):
@@ -106,24 +109,30 @@ def _reduce_directory(directory):
 
 def _parse_messages(lines):
     messages = []
-    while lines:
-        path = lines[0]
-        depth = 0
-        while path[0] == ' ':
-            depth += 1
-            path = path[1:]
 
-        status = Status(lines[1])
+    while True:
+        try:
+            line = next(lines)
+        except StopIteration:
+            break
+
+        if line.startswith('..'):
+            depth = int(line[2:].split('.', 1)[0]) - 1
+        else:
+            depth = line.count(' ')
+
+        path = next(lines)
+
+        status = Status(next(lines))
         if not Path(path).exists():
             status = Status.VIRTUAL
 
         message = Message(path=path,
                           status=status,
-                          subject=lines[2],
-                          sender=lines[3],
-                          date=lines[4],
+                          subject=next(lines),
+                          sender=next(lines),
+                          date=next(lines),
                           children=[])
-        lines = lines[5:]
 
         children = messages
         while depth:

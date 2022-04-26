@@ -1,10 +1,11 @@
 from pathlib import Path
 import sys
+import typing
 
-import PySide6.QtCore
-import PySide6.QtGui
-import PySide6.QtUiTools
-import PySide6.QtWidgets
+from PySide6 import QtCore
+from PySide6 import QtGui
+from PySide6 import QtUiTools
+from PySide6 import QtWidgets
 
 from mbgui import mblaze
 from mbgui.executor import Executor
@@ -32,21 +33,20 @@ def main():
         if path:
             print(path)
 
-    app = PySide6.QtWidgets.QApplication(sys.argv)
+    app = QtWidgets.QApplication(sys.argv)
 
     executor = Executor()
-    icons = {i.stem: PySide6.QtGui.QIcon(str(i))
+    icons = {i.stem: QtGui.QIcon(str(i))
              for i in icons_path.glob('*.png')}
 
     directories = Directories(executor, icons, sys.argv[1:])
     messages = Messages(executor, icons)
     message = Message(executor)
 
-    loader = PySide6.QtUiTools.QUiLoader()
-    window = loader.load(main_ui_path)
+    loader = QtUiTools.QUiLoader()
+    window = loader.load(str(main_ui_path))
 
-    font = PySide6.QtGui.QFontDatabase.systemFont(
-        PySide6.QtGui.QFontDatabase.FixedFont)
+    font = QtGui.QFontDatabase.systemFont(QtGui.QFontDatabase.FixedFont)
     window.message.setFont(font)
 
     window.vsplitter.setStretchFactor(0, 1)
@@ -57,9 +57,9 @@ def main():
     model.currentChanged.connect(on_directories_changed)
 
     header = window.directories.header()
-    header.setSectionResizeMode(0, PySide6.QtWidgets.QHeaderView.Stretch)
-    header.setSectionResizeMode(1, PySide6.QtWidgets.QHeaderView.Interactive)
-    header.setSectionResizeMode(2, PySide6.QtWidgets.QHeaderView.Interactive)
+    header.setSectionResizeMode(0, QtWidgets.QHeaderView.Stretch)
+    header.setSectionResizeMode(1, QtWidgets.QHeaderView.Interactive)
+    header.setSectionResizeMode(2, QtWidgets.QHeaderView.Interactive)
 
     window.messages.setModel(messages.model)
     model = window.messages.selectionModel()
@@ -67,28 +67,31 @@ def main():
     window.messages.doubleClicked.connect(on_messages_double_clicked)
 
     header = window.messages.header()
-    header.setSectionResizeMode(0, PySide6.QtWidgets.QHeaderView.Stretch)
-    header.setSectionResizeMode(1, PySide6.QtWidgets.QHeaderView.Interactive)
-    header.setSectionResizeMode(2, PySide6.QtWidgets.QHeaderView.Interactive)
+    header.setSectionResizeMode(0, QtWidgets.QHeaderView.Stretch)
+    header.setSectionResizeMode(1, QtWidgets.QHeaderView.Interactive)
+    header.setSectionResizeMode(2, QtWidgets.QHeaderView.Interactive)
 
     message.change.connect(window.message.setText)
 
     window.show()
 
-    sys.exit(app.exec())
+    sys.exit(app.exec_())
 
 
 class Directories:
 
-    def __init__(self, executor, icons, paths):
+    def __init__(self,
+                 executor: Executor,
+                 icons: typing.Dict[str, QtGui.QIcon],
+                 paths: typing.Iterable[str]):
         self._executor = executor
         self._icons = icons
-        self._model = PySide6.QtGui.QStandardItemModel()
+        self._model = QtGui.QStandardItemModel()
         self._model.setHorizontalHeaderLabels(['Directory', 'Unseed', 'Total'])
         self._get_directories(paths)
 
     @property
-    def model(self) -> PySide6.QtCore.QAbstractItemModel:
+    def model(self) -> QtCore.QAbstractItemModel:
         return self._model
 
     def _get_directories(self, paths):
@@ -101,9 +104,9 @@ class Directories:
             icon = self._icons['inbox-16' if directory.path
                                else 'folder-16']
 
-            items = [PySide6.QtGui.QStandardItem(icon, directory.name),
-                     PySide6.QtGui.QStandardItem(''),
-                     PySide6.QtGui.QStandardItem('')]
+            items = [QtGui.QStandardItem(icon, directory.name),
+                     QtGui.QStandardItem(''),
+                     QtGui.QStandardItem('')]
 
             for item in items:
                 item.setData(directory.path)
@@ -139,15 +142,17 @@ class Directories:
 
 class Messages:
 
-    def __init__(self, executor: Executor, icons):
+    def __init__(self,
+                 executor: Executor,
+                 icons: typing.Dict[str, QtGui.QIcon]):
         self._executor = executor
         self._icons = icons
-        self._model = PySide6.QtGui.QStandardItemModel()
+        self._model = QtGui.QStandardItemModel()
         self._model.setHorizontalHeaderLabels(['Subject', 'Sender', 'Date'])
         self._directory = None
 
     @property
-    def model(self) -> PySide6.QtCore.QAbstractItemModel:
+    def model(self) -> QtCore.QAbstractItemModel:
         return self._model
 
     def set_directory(self, directory: str):
@@ -173,9 +178,9 @@ class Messages:
             icon = _status_icon(message.status)
             icon = self._icons[f'{icon}-16'] if icon else None
 
-            items = [PySide6.QtGui.QStandardItem(icon, message.subject),
-                     PySide6.QtGui.QStandardItem(message.sender),
-                     PySide6.QtGui.QStandardItem(message.date)]
+            items = [QtGui.QStandardItem(icon, message.subject),
+                     QtGui.QStandardItem(message.sender),
+                     QtGui.QStandardItem(message.date)]
 
             for item in items:
                 item.setData(message.path)
@@ -193,16 +198,16 @@ class Messages:
             return
 
 
-class Message(PySide6.QtCore.QObject):
+class Message(QtCore.QObject):
 
-    change = PySide6.QtCore.Signal(str)
+    change = QtCore.Signal(str)
 
-    def __init__(self, executor):
+    def __init__(self, executor: Executor):
         super().__init__()
         self._executor = executor
         self._path = None
 
-    def set_path(self, path):
+    def set_path(self, path: str):
         if self._path == path:
             return
 

@@ -3,10 +3,10 @@ import concurrent.futures
 import threading
 import typing
 
-import PySide6.QtCore
+from PySide6 import QtCore
 
 
-class Executor(PySide6.QtCore.QObject):
+class Executor(QtCore.QObject):
 
     def __init__(self):
         super().__init__()
@@ -20,8 +20,8 @@ class Executor(PySide6.QtCore.QObject):
         with self._call_main_lock:
             self._call_main_queue.append((fn, args))
 
-        PySide6.QtCore.QMetaObject.invokeMethod(
-            self, "_on_main_call", PySide6.QtCore.Qt.QueuedConnection)
+        QtCore.QMetaObject.invokeMethod(self, "_on_main_call",
+                                        QtCore.Qt.QueuedConnection)
 
     def call_worker(self,
                     fn: typing.Callable,
@@ -36,7 +36,7 @@ class Executor(PySide6.QtCore.QObject):
 
         return future
 
-    @PySide6.QtCore.Slot()
+    @QtCore.Slot()
     def _on_main_call(self):
         with self._call_main_lock:
             if not self._call_main_queue:
