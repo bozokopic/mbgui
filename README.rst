@@ -3,6 +3,8 @@ mbgui
 
 Maildir GUI based on `mblaze <https://github.com/leahneukirchen/mblaze>`_
 
+.. image:: mbgui.png
+
 
 Requirements
 ------------
