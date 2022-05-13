@@ -87,7 +87,7 @@ class Directories:
         self._executor = executor
         self._icons = icons
         self._model = QtGui.QStandardItemModel()
-        self._model.setHorizontalHeaderLabels(['Directory', 'Unseed', 'Total'])
+        self._model.setHorizontalHeaderLabels(['Directory', 'Unseen', 'Total'])
         self._get_directories(paths)
 
     @property
