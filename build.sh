@@ -4,10 +4,8 @@ set -e
 
 cd $(dirname -- "$0")
 
-PYTHON=${PYTHON:-python3}
+LIBS="gtk4 gio-2.0 gio-unix-2.0 glib-2.0"
+CC=${CC:-gcc}
 
-rm -rf ./build
-$PYTHON setup.py \
-    build --build-base build \
-    egg_info --egg-base build \
-    bdist_wheel --dist-dir build
+mkdir -p build
+$CC -o build/mbgui src_c/*.c $(pkg-config --cflags --libs $LIBS)

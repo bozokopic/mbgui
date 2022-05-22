@@ -9,16 +9,18 @@ Maildir GUI based on `mblaze <https://github.com/leahneukirchen/mblaze>`_
 Requirements
 ------------
 
-* python3
+* gtk4
 * mblaze
 
 
-Install
--------
+Build
+-----
 
 ::
 
-    $ pip install mbgui
+    $ ./build.sh
+
+After running build script, ``mbgui`` is avalaible inside ``build`` folder.
 
 
 Run
@@ -26,7 +28,7 @@ Run
 
 ::
 
-    $ mbgui path/to/maildir ...
+    $ build/mbgui path/to/maildir ...
 
 All command line arguments are passed to ``mdirs`` command (with additional
 ``-a`` argument).
