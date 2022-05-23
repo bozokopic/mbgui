@@ -100,6 +100,28 @@ static void on_messages_selection_changed(GtkTreeSelection *self,
 }
 
 
+static gboolean on_messages_key_press(GtkWidget *self, GdkEventKey event,
+                                      gpointer user_data) {
+    app_data_t *data = user_data;
+
+    // TODO
+    g_print(">> %x\n", event.keyval);
+
+    if (event.keyval == GDK_KEY_Return) {
+        gchar *path = get_selected_message(data);
+
+        if (path) {
+            g_print("%s\n", path);
+            g_free(path);
+        }
+
+        return TRUE;
+    }
+
+    return FALSE;
+}
+
+
 static void add_message(GtkTreeStore *store, mbgui_message_t *message,
                         GtkTreeIter *parent) {
     GtkTreeIter iter;
@@ -163,12 +185,11 @@ static GtkWidget *create_directories(app_data_t *data) {
     g_object_set(right_renderer, "xalign", 1.0, "mode",
                  GTK_CELL_RENDERER_MODE_INERT, NULL);
 
-    GtkWidget *scrolled_window = gtk_scrolled_window_new();
+    GtkWidget *scrolled_window = gtk_scrolled_window_new(NULL, NULL);
 
     GtkWidget *directories =
         gtk_tree_view_new_with_model(GTK_TREE_MODEL(data->directories_store));
-    gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scrolled_window),
-                                  directories);
+    gtk_container_add(GTK_CONTAINER(scrolled_window), directories);
 
     GtkTreeViewColumn *col_directory = gtk_tree_view_column_new();
     gtk_tree_view_column_set_title(col_directory, "Directory");
@@ -214,12 +235,13 @@ static GtkWidget *create_messages(app_data_t *data) {
     g_object_set(left_renderer, "xalign", 0.0, "xpad", 5, "mode",
                  GTK_CELL_RENDERER_MODE_INERT, NULL);
 
-    GtkWidget *scrolled_window = gtk_scrolled_window_new();
+    GtkWidget *scrolled_window = gtk_scrolled_window_new(NULL, NULL);
 
     GtkWidget *messages =
         gtk_tree_view_new_with_model(GTK_TREE_MODEL(data->messages_store));
-    gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scrolled_window),
-                                  messages);
+    g_signal_connect(messages, "key-press-event",
+                     G_CALLBACK(on_messages_key_press), data);
+    gtk_container_add(GTK_CONTAINER(scrolled_window), messages);
 
     GtkTreeViewColumn *col_subject = gtk_tree_view_column_new();
     gtk_tree_view_column_set_title(col_subject, "Subject");
@@ -255,13 +277,12 @@ static GtkWidget *create_messages(app_data_t *data) {
 static GtkWidget *create_message(app_data_t *data) {
     data->message_buffer = gtk_text_buffer_new(NULL);
 
-    GtkWidget *scrolled_window = gtk_scrolled_window_new();
+    GtkWidget *scrolled_window = gtk_scrolled_window_new(NULL, NULL);
 
     GtkWidget *message = gtk_text_view_new_with_buffer(data->message_buffer);
     gtk_text_view_set_editable(GTK_TEXT_VIEW(message), FALSE);
     gtk_text_view_set_monospace(GTK_TEXT_VIEW(message), TRUE);
-    gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scrolled_window),
-                                  message);
+    gtk_container_add(GTK_CONTAINER(scrolled_window), message);
 
     return scrolled_window;
 }
@@ -273,25 +294,22 @@ static GtkWidget *create_window(GtkApplication *app, app_data_t *data) {
     gtk_window_set_default_size(GTK_WINDOW(window), 600, 800);
 
     GtkWidget *hpaned = gtk_paned_new(GTK_ORIENTATION_HORIZONTAL);
-    gtk_paned_set_position(GTK_PANED(hpaned), 400);
-    gtk_window_set_child(GTK_WINDOW(window), hpaned);
+    gtk_container_add(GTK_CONTAINER(window), hpaned);
 
     GtkWidget *directories = create_directories(data);
-    gtk_paned_set_start_child(GTK_PANED(hpaned), directories);
-    gtk_paned_set_resize_start_child(GTK_PANED(hpaned), TRUE);
+    gtk_paned_pack1(GTK_PANED(hpaned), directories, TRUE, TRUE);
 
     GtkWidget *vpaned = gtk_paned_new(GTK_ORIENTATION_VERTICAL);
-    gtk_paned_set_position(GTK_PANED(vpaned), 400);
-    gtk_paned_set_end_child(GTK_PANED(hpaned), vpaned);
-    gtk_paned_set_resize_end_child(GTK_PANED(hpaned), TRUE);
+    gtk_paned_pack2(GTK_PANED(hpaned), vpaned, TRUE, TRUE);
 
     GtkWidget *messages = create_messages(data);
-    gtk_paned_set_start_child(GTK_PANED(vpaned), messages);
-    gtk_paned_set_resize_start_child(GTK_PANED(vpaned), TRUE);
+    gtk_paned_pack1(GTK_PANED(vpaned), messages, TRUE, TRUE);
 
     GtkWidget *message = create_message(data);
-    gtk_paned_set_end_child(GTK_PANED(vpaned), message);
-    gtk_paned_set_resize_end_child(GTK_PANED(vpaned), TRUE);
+    gtk_paned_pack2(GTK_PANED(vpaned), message, TRUE, TRUE);
+
+    gtk_paned_set_position(GTK_PANED(hpaned), 200);
+    gtk_paned_set_position(GTK_PANED(vpaned), 200);
 
     return window;
 }
@@ -372,7 +390,7 @@ static void on_command_line(GtkApplication *app,
                             gpointer user_data) {
     app_data_t *data = g_malloc(sizeof(app_data_t));
     GtkWidget *window = create_window(app, data);
-    gtk_window_present(GTK_WINDOW(window));
+    gtk_widget_show_all(window);
 
     gchar **argv = g_application_command_line_get_arguments(command_line, NULL);
     mbgui_get_directories(argv, on_get_directories, data);

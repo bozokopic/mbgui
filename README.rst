@@ -9,7 +9,7 @@ Maildir GUI based on `mblaze <https://github.com/leahneukirchen/mblaze>`_
 Requirements
 ------------
 
-* gtk4
+* gtk3
 * mblaze
 
 
@@ -33,9 +33,9 @@ Run
 All command line arguments are passed to ``mdirs`` command (with additional
 ``-a`` argument).
 
-By double clicking on single message in messages list, selected message is
-printed to standard output. This can be used for piping ``mbgui`` with
-other mblase commands.
+By pressing ``Return`` key while message is selected in messages list, selected
+message is printed to standard output. This can be used for piping ``mbgui``
+with other mblaze commands.
 
 
 License
